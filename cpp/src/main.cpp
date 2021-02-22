@@ -34,13 +34,33 @@
 // Sample includes
 #include <SaveDepth.hpp>
 
+#include <algorithm>
+#include "CornerDetAC.h"
+#include "ChessboradStruct.h"
+
+#include <stdio.h>
+#include <iostream>
+#include <time.h>
+#include <math.h>
+#include "MatrixReaderWriter.h"
+
 using namespace sl;
+typedef struct Trafo {
+    cv::Mat rot;
+    float scale;
+    cv::Point3f offset1, offset2;
+} Trafo;
+
+std::vector<cv::Point2i> points;
 cv::Mat slMat2cvMat(Mat& input);
 #ifdef HAVE_CUDA
 cv::cuda::GpuMat slMat2cvMatGPU(Mat& input);
 #endif // HAVE_CUDA
 
+Trafo registration(vector<cv::Point3f>& pts1, std::vector<cv::Point3f>& pts2);
 void printHelp();
+Corners CornerDetection(cv::Mat image_ocv);
+void pointcloud_registration();
 
 int main(int argc, char **argv) {
 
@@ -90,15 +110,17 @@ int main(int argc, char **argv) {
     cv::Mat depth_image_ocv; // cpu opencv mat for display purposes
 #endif
     Mat point_cloud;
-
+    cv::Mat std_dev_depth;
     // Loop until 'q' is pressed
     char key = ' ';
-    while (key != 'q') {
+    int i = 0;
+    while (/*key != 'q' ||*/ i < 50) {
 
         if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) {
 
             // Retrieve the left image, depth image in half-resolution
             zed.retrieveImage(image_zed, VIEW::LEFT, MEM::CPU, new_image_size);
+
 #ifndef HAVE_CUDA 
             // retrieve CPU -> the ocv reference is therefore updated
             zed.retrieveImage(depth_image_zed, VIEW::DEPTH, MEM::CPU, new_image_size);
@@ -110,19 +132,34 @@ int main(int argc, char **argv) {
             // To learn how to manipulate and display point clouds, see Depth Sensing sample
             zed.retrieveMeasure(point_cloud, MEASURE::XYZRGBA, MEM::CPU, new_image_size);
 
+            Corners corners = CornerDetection(image_ocv); // std::vector<cv::Point2f> p
+            // std::cout << "2D pixel points " << endl << endl;
+            // std::cout << corners.p << endl;
+            std::cout << "3D points from 2D pixels" << endl << endl;
+            for (auto pixel : corners.p) {
+                sl::float4 point3D;
+                point_cloud.getValue(pixel.x, pixel.y, &point3D);
+                std::cout << point3D.x << " "  << point3D.y << " " << point3D.z << std::endl;
+            }
+            
+
+            //pointcloud_registration();
+
             // Display image and depth using cv:Mat which share sl:Mat data
-            cv::imshow("Image", image_ocv);
+            //cv::imshow("Image", image_ocv);
 #ifdef HAVE_CUDA
             // download the Ocv GPU data from Device to Host to be displayed
             depth_image_ocv_gpu.download(depth_image_ocv);
 #endif
-            cv::imshow("Depth", depth_image_ocv);
-
+            // cv::imshow("Depth", depth_image_ocv);
             // Handle key event
             key = cv::waitKey(10);
             processKeyEvent(zed, key);
+            cv::waitKey(0);
+            i++;
         }
     }
+
 
 #ifdef HAVE_CUDA
     // sl::Mat GPU memory needs to be free before the zed
@@ -178,4 +215,233 @@ void printHelp() {
     std::cout << " Press 'd' to save Depth image" << std::endl;
     std::cout << " Press 'm' to switch Point Cloud format" << std::endl;
     std::cout << " Press 'n' to switch Depth format" << std::endl;
+}
+
+Corners CornerDetection(cv::Mat image_ocv) {
+    cv::Mat src1;
+    cv::Mat src;
+    printf("read image...\n");
+
+    src1 = image_ocv;//cv::imread(simage.c_str(), -1);
+    if (src1.channels() == 1)
+    {
+        src = src1.clone();
+    }
+    else
+    {
+        if (src1.channels() == 3)
+        {
+            cv::cvtColor(src1, src, CV_BGR2GRAY);
+        }
+        else
+        {
+            if (src1.channels() == 4)
+            {
+                cv::cvtColor(src1, src, CV_BGRA2GRAY);
+            }
+        }
+    }
+
+    std::vector<cv::Point> corners_p;// Store the found corners
+
+    double t = (double)cv::getTickCount();
+    std::vector<cv::Mat> chessboards;
+    CornerDetAC corner_detector(src);
+    ChessboradStruct chessboardstruct;
+
+    Corners corners_s;
+    corner_detector.detectCorners(src, corners_p, corners_s, 0.01);
+    // std::cout << corners_s.p << std::endl;
+
+    t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    std::cout << "time cost :" << t << std::endl;
+
+    ImageChessesStruct ics;
+    chessboardstruct.chessboardsFromCorners(corners_s, chessboards, 0.6);
+    chessboardstruct.drawchessboard(src1, corners_s, chessboards, "cb", 0);
+    return corners_s;
+}
+
+Trafo registration(vector<cv::Point3f>& pts1, std::vector<cv::Point3f>& pts2) {
+
+    Trafo ret;
+
+    int NUM = pts1.size();
+
+    //Subtract offsets
+
+    cv::Point3d offset1(0.0, 0.0, 0.0);
+    cv::Point3d offset2(0.0, 0.0, 0.0);
+
+    for (int i = 0; i < NUM; i++) {
+        cv::Point3f v1 = pts1[i];
+        cv::Point3f v2 = pts2[i];
+
+        offset1.x += v1.x;
+        offset1.y += v1.y;
+        offset1.z += v1.z;
+
+        offset2.x += v2.x;
+        offset2.y += v2.y;
+        offset2.z += v2.z;
+    }
+
+    offset1.x /= NUM;
+    offset1.y /= NUM;
+    offset1.z /= NUM;
+
+    offset2.x /= NUM;
+    offset2.y /= NUM;
+    offset2.z /= NUM;
+
+    ret.offset1.x = offset1.x;
+    ret.offset1.y = offset1.y;
+    ret.offset1.z = offset1.z;
+
+    ret.offset2.x = offset2.x;
+    ret.offset2.y = offset2.y;
+    ret.offset2.z = offset2.z;
+
+    cv::Mat H = cv::Mat::zeros(3, 3, CV_32F);
+    for (int i = 0; i < NUM; i++) {
+        cv::Point3f v1 = pts1[i];
+        cv::Point3f v2 = pts2[i];
+
+        float x1 = v1.x - offset1.x;
+        float y1 = v1.y - offset1.y;
+        float z1 = v1.z - offset1.z;
+
+        float x2 = v2.x - offset2.x;
+        float y2 = v2.y - offset2.y;
+        float z2 = v2.z - offset2.z;
+
+        H.at<float>(0, 0) += x2 * x1;
+        H.at<float>(0, 1) += x2 * y1;
+        H.at<float>(0, 2) += x2 * z1;
+
+        H.at<float>(1, 0) += y2 * x1;
+        H.at<float>(1, 1) += y2 * y1;
+        H.at<float>(1, 2) += y2 * z1;
+
+        H.at<float>(2, 0) += z2 * x1;
+        H.at<float>(2, 1) += z2 * y1;
+        H.at<float>(2, 2) += z2 * z1;
+    }
+
+
+    cv::Mat w(3, 3, CV_32F);
+    cv::Mat u(3, 3, CV_32F);
+    cv::Mat vt(3, 3, CV_32F);
+
+    cv::SVD::compute(H, w, u, vt);
+
+    cv::Mat rot = vt.t() * u.t();
+    ret.rot = rot;
+
+    float numerator = 0.0;
+    float denominator = 0.0;
+
+    for (int i = 0; i < NUM; i++) {
+        cv::Point3f v1 = pts1[i];
+        cv::Point3f v2 = pts2[i];
+
+        float x1 = v1.x - offset1.x;
+        float y1 = v1.y - offset1.y;
+        float z1 = v1.z - offset1.z;
+
+
+        cv::Mat p2(3, 1, CV_32F);
+
+        p2.at<float>(0, 0) = v2.x - offset2.x;
+        p2.at<float>(1, 0) = v2.y - offset2.y;
+        p2.at<float>(2, 0) = v2.z - offset2.z;
+
+        p2 = rot * p2;
+
+        float x2 = p2.at<float>(0, 0);
+        float y2 = p2.at<float>(1, 0);
+        float z2 = p2.at<float>(2, 0);
+
+
+        numerator += x1 * x2 + y1 * y2 + z1 * z2;
+        denominator += x2 * x2 + y2 * y2 + z2 * z2;
+
+    }
+
+    ret.scale = numerator / denominator;
+
+
+    return ret;
+}
+
+void pointcloud_registration() {
+    MatrixReaderWriter mrw1("proba.xyz");
+    MatrixReaderWriter mrw2("proba_Cloud.xyz");
+
+    int commonNum = atoi("144");
+
+    printf("%d %d\n", mrw1.rowNum, mrw1.columnNum);
+    printf("%d %d\n", mrw2.rowNum, mrw2.columnNum);
+
+    vector<cv::Point3f> pts1, pts2;
+    for (int i = 0; i < commonNum; i++) {
+        float x1 = mrw1.data[3 * i];
+        float y1 = mrw1.data[3 * i + 1];
+        float z1 = mrw1.data[3 * i + 2];
+
+        float x2 = mrw2.data[3 * i];
+        float y2 = mrw2.data[3 * i + 1];
+        float z2 = mrw2.data[3 * i + 2];
+
+        cv::Point3f pt1(x1, y1, z1), pt2(x2, y2, z2);
+        pts1.push_back(pt1);
+        pts2.push_back(pt2);
+    }
+
+
+    Trafo trafo = registration(pts1, pts2);
+
+    //Write result
+    float error = 0.0;
+    int num = mrw1.rowNum;
+    double* data = new double[2 * num * 3];
+    for (int i = 0; i < num; i++) {
+        float x1 = mrw1.data[3 * i];
+        float y1 = mrw1.data[3 * i + 1];
+        float z1 = mrw1.data[3 * i + 2];
+
+        data[6 * i] = x1 - trafo.offset1.x;
+        data[6 * i + 1] = y1 - trafo.offset1.y;
+        data[6 * i + 2] = z1 - trafo.offset1.z;
+
+        cv::Mat pont1(3, 1, CV_32F);
+        pont1.at<float>(0, 0) = x1 - trafo.offset1.x;
+        pont1.at<float>(1, 0) = y1 - trafo.offset1.y;
+        pont1.at<float>(2, 0) = z1 - trafo.offset1.z;
+
+
+        float x2 = mrw2.data[3 * i];
+        float y2 = mrw2.data[3 * i + 1];
+        float z2 = mrw2.data[3 * i + 2];
+
+        cv::Mat p2(3, 1, CV_32F);
+        p2.at<float>(0, 0) = x2 - trafo.offset2.x;
+        p2.at<float>(1, 0) = y2 - trafo.offset2.y;
+        p2.at<float>(2, 0) = z2 - trafo.offset2.z;
+
+        p2 = (trafo.rot * p2) * trafo.scale;
+
+        data[6 * i + 3] = p2.at<float>(0, 0);
+        data[6 * i + 4] = p2.at<float>(1, 0);
+        data[6 * i + 5] = p2.at<float>(2, 0);
+
+        error += cv::norm(pont1, p2);
+
+    }
+    error /= num;
+    error = sqrt(error);
+
+    cout << "RMSE:" << error << endl;
+    MatrixReaderWriter mrw3(data, 2 * num, 3);
+    mrw3.save("res.xyz");
 }

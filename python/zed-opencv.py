@@ -43,7 +43,7 @@ def save_point_cloud(zed, filename) :
     zed.retrieve_measure(tmp, sl.MEASURE.DEPTH)
     saved = (tmp.write(filename + depth_format_ext) == sl.ERROR_CODE.SUCCESS)
     if saved :
-        print("Done")
+        print("Done ", filename + depth_format_ext)
     else :
         print("Failed... Please check that you have permissions to write on disk")
 

@@ -1,0 +1,31 @@
+# CMake generation dependency list for this directory.
+C:/Program Files (x86)/ZED SDK/dependencies/opencv_3.1.0/OpenCVConfig-version.cmake
+C:/Program Files (x86)/ZED SDK/dependencies/opencv_3.1.0/OpenCVConfig.cmake
+C:/Program Files (x86)/ZED SDK/zed-config-version.cmake
+C:/Program Files (x86)/ZED SDK/zed-config.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/CMakeCInformation.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/CMakeCXXInformation.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/CMakeCommonLanguageInclude.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/CMakeGenericSystem.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/CMakeInitializeConfigs.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/CMakeLanguageInformation.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/CMakeRCInformation.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/CMakeSystemSpecificInformation.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/CMakeSystemSpecificInitialize.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/Compiler/CMakeCommonCompilerMacros.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/Compiler/MSVC-C.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/Compiler/MSVC-CXX.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/FindCUDA.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/FindCUDA/select_compute_arch.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/FindPackageHandleStandardArgs.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/FindPackageMessage.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/Platform/Windows-MSVC-C.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/Platform/Windows-MSVC-CXX.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/Platform/Windows-MSVC.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/Platform/Windows.cmake
+D:/goncz/cmake-3.19.4-win64-x64/share/cmake-3.19/Modules/Platform/WindowsPaths.cmake
+D:/zed codes/zed-opencv/cpp/CMakeLists.txt
+D:/zed codes/zed-opencv/cpp/build/CMakeFiles/3.19.4/CMakeCCompiler.cmake
+D:/zed codes/zed-opencv/cpp/build/CMakeFiles/3.19.4/CMakeCXXCompiler.cmake
+D:/zed codes/zed-opencv/cpp/build/CMakeFiles/3.19.4/CMakeRCCompiler.cmake
+D:/zed codes/zed-opencv/cpp/build/CMakeFiles/3.19.4/CMakeSystem.cmake

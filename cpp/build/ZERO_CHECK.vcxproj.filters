@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\zed codes\zed-opencv\cpp\build\CMakeFiles\3dcda213876c85f4f79c6b57cb8d7c96\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{FB7A009B-941A-3238-A7E2-DCA62D7FEFA8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
