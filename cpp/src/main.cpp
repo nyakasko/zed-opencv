@@ -38,6 +38,7 @@
 #include "CornerDetAC.h"
 #include "ChessboradStruct.h"
 
+#include <fstream>
 #include <stdio.h>
 #include <iostream>
 #include <time.h>
@@ -135,12 +136,21 @@ int main(int argc, char **argv) {
             Corners corners = CornerDetection(image_ocv); // std::vector<cv::Point2f> p
             // std::cout << "2D pixel points " << endl << endl;
             // std::cout << corners.p << endl;
-            std::cout << "3D points from 2D pixels" << endl << endl;
-            for (auto pixel : corners.p) {
-                sl::float4 point3D;
-                point_cloud.getValue(pixel.x, pixel.y, &point3D);
-                std::cout << point3D.x << " "  << point3D.y << " " << point3D.z << std::endl;
+            if (!corners.p.empty()) {
+                std::ofstream detected_pointcloud;
+                detected_pointcloud.open("detected_pointcloud.xyz");
+                std::cout << "3D points from 2D pixels" << endl << endl;
+                for (auto pixel : corners.p) {
+                    sl::float4 point3D;
+                    point_cloud.getValue(pixel.x, pixel.y, &point3D);
+                    std::cout << point3D.x << " " << point3D.y << " " << point3D.z << std::endl;
+                    if (!std::isnan(point3D.x) && !std::isnan(point3D.y) && !std::isnan(point3D.z)) {
+                        detected_pointcloud << point3D.x << " " << point3D.y << " " << point3D.z << std::endl;
+                    }
+                }
+                detected_pointcloud.close();
             }
+
             
 
             //pointcloud_registration();
