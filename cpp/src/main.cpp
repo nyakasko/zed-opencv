@@ -149,11 +149,8 @@ int main(int argc, char **argv) {
                     }
                 }
                 detected_pointcloud.close();
+                //pointcloud_registration("proba.xyz", "proba_Cloud.xyz"); // reference pcl and detected pcl
             }
-
-            
-
-            //pointcloud_registration("proba.xyz", "proba_Cloud.xyz");
 
             // Display image and depth using cv:Mat which share sl:Mat data
             //cv::imshow("Image", image_ocv);
