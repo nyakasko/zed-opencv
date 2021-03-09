@@ -61,7 +61,7 @@ cv::cuda::GpuMat slMat2cvMatGPU(Mat& input);
 Trafo registration(vector<cv::Point3f>& pts1, std::vector<cv::Point3f>& pts2);
 void printHelp();
 Corners CornerDetection(cv::Mat image_ocv);
-void pointcloud_registration();
+void pointcloud_registration(std::string reference_pcl, std::string detected_pcl);
 
 int main(int argc, char **argv) {
 
@@ -116,7 +116,6 @@ int main(int argc, char **argv) {
     char key = ' ';
     int i = 0;
     while (/*key != 'q' ||*/ i < 50) {
-
         if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) {
 
             // Retrieve the left image, depth image in half-resolution
@@ -137,6 +136,7 @@ int main(int argc, char **argv) {
             // std::cout << "2D pixel points " << endl << endl;
             // std::cout << corners.p << endl;
             if (!corners.p.empty()) {
+                std::cout << "Number of found points: " << corners.p.size() << std::endl;
                 std::ofstream detected_pointcloud;
                 detected_pointcloud.open("detected_pointcloud.xyz");
                 std::cout << "3D points from 2D pixels" << endl << endl;
@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
 
             
 
-            //pointcloud_registration();
+            //pointcloud_registration("proba.xyz", "proba_Cloud.xyz");
 
             // Display image and depth using cv:Mat which share sl:Mat data
             //cv::imshow("Image", image_ocv);
@@ -384,11 +384,11 @@ Trafo registration(vector<cv::Point3f>& pts1, std::vector<cv::Point3f>& pts2) {
     return ret;
 }
 
-void pointcloud_registration() {
-    MatrixReaderWriter mrw1("proba.xyz");
-    MatrixReaderWriter mrw2("proba_Cloud.xyz");
+void pointcloud_registration(std::string reference_pcl, std::string detected_pcl) {
+    MatrixReaderWriter mrw1(reference_pcl.c_str());
+    MatrixReaderWriter mrw2(detected_pcl.c_str());
 
-    int commonNum = atoi("144");
+    int commonNum = mrw2.rowNum; //atoi("144");
 
     printf("%d %d\n", mrw1.rowNum, mrw1.columnNum);
     printf("%d %d\n", mrw2.rowNum, mrw2.columnNum);
@@ -413,7 +413,7 @@ void pointcloud_registration() {
 
     //Write result
     float error = 0.0;
-    int num = mrw1.rowNum;
+    int num = commonNum;
     double* data = new double[2 * num * 3];
     for (int i = 0; i < num; i++) {
         float x1 = mrw1.data[3 * i];
